@@ -14,7 +14,7 @@ namespace NDMUnofficialPatch
     {
         public const string PluginGuid = "ndm.unofficialpatch";
         public const string PluginName = "NDM Unofficial Patch";
-        public const string PluginVersion = "0.24.1";
+        public const string PluginVersion = "0.24.2";
 
         internal static ManualLogSource Logger;
 

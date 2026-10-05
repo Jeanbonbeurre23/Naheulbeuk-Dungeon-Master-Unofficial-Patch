@@ -20,7 +20,11 @@ namespace NDMUnofficialPatch.Floors
     // removing the Golbargh's spawner, lair and lair sound from each copy, and raises floors 5 and 6 by N x 20 units as
     // floors 5+N and 6+N. Most fixed meshes were merged at build time into combined meshes (static batching), which draw
     // where they were baked whatever their object's position; those renderers get a root transform placed as many units
-    // up (Renderer.staticBatchRootTransform), which the 0.21.0 probe showed to move them.
+    // up (Renderer.staticBatchRootTransform), which the 0.21.0 probe showed to move them. The copies draw the same pieces
+    // of the same combined meshes as floor 4, and the game draws a run of merged pieces that share a material in one
+    // call with one root: in a video of 5 October 2026, pieces of the outer walls appeared at another floor from one
+    // frame to the next. Each root therefore gets its own copies of the materials (RootMaterial), so that pieces with
+    // different roots never share a call.
     //
     // The tables keyed by floor are extended (FloorTables) and put back for every game played without inserted floors.
     // The inserted floors follow floor 4: they are locked while floor 4 is locked, their buttons show floor 4's lock,
@@ -56,6 +60,8 @@ namespace NDMUnofficialPatch.Floors
         private static DateTime _lastReadTime;
 
         private static readonly Dictionary<int, GameObject> Roots = new(); // by number of floors raised
+        private static readonly Dictionary<(IntPtr Root, IntPtr Material), Material> RootMaterials = new();
+        private static int _materialsCopied;
         private static Transform _rootParent;
         private static readonly HashSet<IntPtr> Processed = new();
         private static float _nextLatePass;
@@ -195,6 +201,9 @@ namespace NDMUnofficialPatch.Floors
             Processed.Clear();
             FloorButtonInjectPatch.Reset();
             Roots.Clear();
+            foreach (var m in RootMaterials.Values) if (m != null) Object.Destroy(m);
+            RootMaterials.Clear();
+            _materialsCopied = 0;
             _rootParent = null;
 
             if (n <= 0)
@@ -281,6 +290,7 @@ namespace NDMUnofficialPatch.Floors
             if (anyGrid == null) throw new InvalidOperationException("no FloorGrid object of floors 4 to 6 found in the loaded scenes");
             _rootParent = anyGrid.transform.parent;
             Process(objects, report);
+            report.Append($" {_materialsCopied} material(s) copied, one set per root;");
             ShiftLayerPresets(report);
         }
 
@@ -349,6 +359,17 @@ namespace NDMUnofficialPatch.Floors
             return RootMerged(go, RootFor(steps));
         }
 
+        // The copy of a material used by the merged renderers of one root, made the first time it is needed.
+        private static Material RootMaterial(Transform root, Material material)
+        {
+            var key = (root.Pointer, material.Pointer);
+            if (RootMaterials.TryGetValue(key, out var copy) && copy != null) return copy;
+            copy = new Material(material) { name = material.name + " (" + root.name + ")" };
+            RootMaterials[key] = copy;
+            _materialsCopied++;
+            return copy;
+        }
+
         // A renderer merged at build time draws a piece of a mesh named "Combined Mesh (root: scene) N".
         private static int RootMerged(GameObject go, Transform root)
         {
@@ -359,6 +380,10 @@ namespace NDMUnofficialPatch.Floors
                 var mesh = filter == null ? null : filter.sharedMesh;
                 if (mesh == null || !mesh.name.StartsWith("Combined Mesh", StringComparison.Ordinal)) continue;
                 r.staticBatchRootTransform = root;
+                var materials = r.sharedMaterials;
+                for (int i = 0; i < materials.Length; i++)
+                    if (materials[i] != null) materials[i] = RootMaterial(root, materials[i]);
+                r.sharedMaterials = materials;
                 if (r.enabled)
                 {
                     r.enabled = false;

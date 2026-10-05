@@ -2,7 +2,7 @@
 
 An unofficial patch for *Naheulbeuk's Dungeon Master*, Steam version 1.8. It fixes glitches that players still report, adds safety nets for situations where the game gets stuck, adds management tools, and changes part of the game's balance. Each change can be turned off on its own in a settings file.
 
-Version 0.24.1, by Jeanbonbeurre23. This patch is not made or endorsed by the developers of the game.
+Version 0.24.2, by Jeanbonbeurre23. This patch is not made or endorsed by the developers of the game.
 
 *La version française suit la version anglaise : [Français](#français).*
 
@@ -63,8 +63,8 @@ The patch also writes what it does to `BepInEx\LogOutput.log` and to one file pe
 1. Find the game's folder: in Steam, right-click *Naheulbeuk's Dungeon Master*, then **Manage › Browse local files**. It is the folder that contains `NDM.exe`.
 2. Download BepInEx: [BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788+5b766a3.zip](https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip), from the [BepInEx bleeding-edge builds page](https://builds.bepinex.dev/projects/bepinex_be). Extract the archive into the game's folder, so that `BepInEx`, `dotnet`, `winhttp.dll` and `doorstop_config.ini` sit next to `NDM.exe`.
 3. Start the game once, wait for the main menu, then quit. This first start takes several minutes longer than usual while BepInEx prepares itself; the next ones take the usual time.
-4. Download `NDMUnofficialPatch-0.24.1.zip` from the Releases page and extract it into the game's folder. The patch must end up as `BepInEx\plugins\NDMUnofficialPatch\NDMUnofficialPatch.dll`.
-5. Start the game. In `BepInEx\LogOutput.log`, the lines `NDM Unofficial Patch 0.24.1 loading` and `Known game build` show that the patch is running.
+4. Download `NDMUnofficialPatch-0.24.2.zip` from the Releases page and extract it into the game's folder. The patch must end up as `BepInEx\plugins\NDMUnofficialPatch\NDMUnofficialPatch.dll`.
+5. Start the game. In `BepInEx\LogOutput.log`, the lines `NDM Unofficial Patch 0.24.2 loading` and `Known game build` show that the patch is running.
 
 ## Settings
 
@@ -117,7 +117,7 @@ The patch's code, documentation and scripts are released under the GNU General P
 
 Un patch non officiel pour *Naheulbeuk's Dungeon Master*, version Steam 1.8. Il corrige des bugs que les joueurs signalent encore, ajoute des garde-fous pour les situations où le jeu se bloque, ajoute des outils de gestion et modifie une partie de l'équilibrage. Chaque changement peut être désactivé séparément dans un fichier de réglages.
 
-Version 0.24.1, par Jeanbonbeurre23. Ce patch n'est ni réalisé ni approuvé par les développeurs du jeu.
+Version 0.24.2, par Jeanbonbeurre23. Ce patch n'est ni réalisé ni approuvé par les développeurs du jeu.
 
 ### Ce qu'il fait
 
@@ -176,8 +176,8 @@ Le patch écrit aussi ce qu'il fait dans `BepInEx\LogOutput.log` et dans un fich
 1. Trouver le dossier du jeu : dans Steam, clic droit sur *Naheulbeuk's Dungeon Master*, puis **Gérer › Parcourir les fichiers locaux**. C'est le dossier qui contient `NDM.exe`.
 2. Télécharger BepInEx : [BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788+5b766a3.zip](https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip), depuis la [page des builds bleeding-edge de BepInEx](https://builds.bepinex.dev/projects/bepinex_be). Extraire l'archive dans le dossier du jeu, de sorte que `BepInEx`, `dotnet`, `winhttp.dll` et `doorstop_config.ini` se trouvent à côté de `NDM.exe`.
 3. Lancer le jeu une fois, attendre le menu principal, puis quitter. Ce premier lancement prend plusieurs minutes de plus que d'habitude, le temps que BepInEx se prépare ; les suivants prennent le temps habituel.
-4. Télécharger `NDMUnofficialPatch-0.24.1.zip` depuis la page Releases et l'extraire dans le dossier du jeu. Le patch doit se trouver en `BepInEx\plugins\NDMUnofficialPatch\NDMUnofficialPatch.dll`.
-5. Lancer le jeu. Dans `BepInEx\LogOutput.log`, les lignes `NDM Unofficial Patch 0.24.1 loading` et `Known game build` indiquent que le patch fonctionne.
+4. Télécharger `NDMUnofficialPatch-0.24.2.zip` depuis la page Releases et l'extraire dans le dossier du jeu. Le patch doit se trouver en `BepInEx\plugins\NDMUnofficialPatch\NDMUnofficialPatch.dll`.
+5. Lancer le jeu. Dans `BepInEx\LogOutput.log`, les lignes `NDM Unofficial Patch 0.24.2 loading` et `Known game build` indiquent que le patch fonctionne.
 
 ### Réglages
 
