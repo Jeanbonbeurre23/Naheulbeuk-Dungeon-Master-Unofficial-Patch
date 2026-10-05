@@ -314,6 +314,13 @@ namespace NDMUnofficialPatch.Management
             _pendingLoadTime = DateTime.Now;
         }
 
+        // A new game starts: the save the main menu read last was only listed, and its assignments are not restored.
+        internal static void OnNewGame()
+        {
+            if (_pendingLoadPath != null) Plugin.Logger.LogInfo("[Manager] new game: no saved assignment restored");
+            _pendingLoadPath = null;
+        }
+
         internal static void OnWorldChanged()
         {
             ByMinion.Clear();

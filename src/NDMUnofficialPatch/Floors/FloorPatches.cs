@@ -22,19 +22,7 @@ namespace NDMUnofficialPatch.Floors
         }
     }
 
-    [HarmonyPatch(typeof(GameMaster), nameof(GameMaster.LaunchCampaign))]
-    internal static class FloorNewCampaignPatch
-    {
-        private static bool Prepare() => FloorInsertion.Needed;
-        private static void Prefix() => FloorInsertion.OnNewGame("campaign");
-    }
-
-    [HarmonyPatch(typeof(SandboxSettingsPage), nameof(SandboxSettingsPage.LaunchSandbox))]
-    internal static class FloorNewSandboxPatch
-    {
-        private static bool Prepare() => FloorInsertion.Needed;
-        private static void Prefix() => FloorInsertion.OnNewGame("sandbox");
-    }
+    // The start of a new game is noticed in Core/NewGameNotice.cs, which calls FloorInsertion.OnNewGame.
 
     [HarmonyPatch(typeof(GameMaster), nameof(GameMaster.LoadGame))]
     internal static class FloorLoadGamePatch

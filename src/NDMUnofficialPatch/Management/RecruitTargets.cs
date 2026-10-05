@@ -443,6 +443,13 @@ namespace NDMUnofficialPatch.Management
             _pendingLoadTime = DateTime.Now;
         }
 
+        // A new game starts: the save the main menu read last was only listed, and its targets are not restored.
+        internal static void OnNewGame()
+        {
+            if (_pendingLoadPath != null) Plugin.Logger.LogInfo("[Recruit] new game: no saved target restored");
+            _pendingLoadPath = null;
+        }
+
         internal static void OnWorldChanged()
         {
             Targets.Clear();
