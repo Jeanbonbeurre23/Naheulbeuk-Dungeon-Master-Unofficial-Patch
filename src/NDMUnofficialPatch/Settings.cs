@@ -33,6 +33,7 @@ namespace NDMUnofficialPatch
         internal static ConfigEntry<bool> CombatStrength;
         internal static ConfigEntry<int> CleaningRadius;
         internal static ConfigEntry<bool> HealDeadlock;
+        internal static ConfigEntry<bool> EffectParentGuard;
         internal static ConfigEntry<bool> TrapTriggers;
         internal static ConfigEntry<int> MaximumMinions;
         internal static ConfigEntry<bool> GolbarghLairOnly;
@@ -87,6 +88,8 @@ namespace NDMUnofficialPatch
                 "When the builder's accessibility check comes back with every walkable square of the floor marked because its walk from the stairs did not start, redo that walk from the same stairs, so that squares those stairs can reach are no longer called not accessible.");
             HealDeadlock = cfg.Bind("Fixes", "HealDeadlock", true,
                 "When every pharmagician is waiting in bed to be healed, the one with the lowest id gets up and goes back to work, healing the others, until another pharmagician is up and not wounded; he then lies down in his turn. In the game's rule a pharmagician waiting in bed still counts as present, so wounded minions and pharmagicians can all wait with nobody left to heal them.");
+            EffectParentGuard = cfg.Bind("Fixes", "EffectParentGuard", true,
+                "Skips a visual effect that a character's animation attaches to an entity without a visual, and removes, when a save loads, the effects such a request left half-built. In the game, an effect attached to the target of a character's action goes to the game's state entity when that action has no target recorded; building it then fails on every frame, and every game system that runs after it stops, builders included, while area-of-effect events pile up in the save.");
             TrapTriggers = cfg.Bind("Balance", "TrapTriggers", true,
                 "A loaded trap always goes off when an adventurer steps on it, deceiving traps included, and never when one of the player's minions does. In the game, a trap goes off under an adventurer 35 % of the time (deceiving traps only for the origins they target), and under a minion 1 %, plus 5 % with the Insouciant trait, plus a second 2 % for elves. The trap panel still shows the game's percentage.");
             CleaningRadius = cfg.Bind("Balance", "CleaningRadius", 2,
@@ -94,7 +97,7 @@ namespace NDMUnofficialPatch
             MaximumMinions = cfg.Bind("Balance", "MaximumMinions", 500,
                 new ConfigDescription("The dungeon holds up to this many minions, or the game's own maximum when that is higher: in the game, the sum of the minion places of the unlocked floors. Recruitment and guard lockers check this maximum. 0 leaves the game's maximum unchanged.", new AcceptableValueRange<int>(0, 10000)));
             GolbarghLairOnly = cfg.Bind("Balance", "GolbarghLairOnly", true,
-                "The Golbargh's patience falls faster only for the people who stand in his lair, not for everyone on his floor: in the game, 6, 12 and 18 minions and adventurers on his floor (Zangdar and Reivax excepted) make it fall faster. A death on his floor upsets him only when it happens in his lair. His patience still falls by itself, and the death of one of his demons still upsets him wherever it happens.");
+                "The Golbargh's patience falls faster only for the people who stand in his lair, not for everyone on his floor: in the game, 6, 12 and 18 minions and adventurers on his floor (Zangdar and Reivax excepted) make it fall faster. Deaths follow the game's rule: each death on his floor refills his patience. His patience still falls by itself, and the death of one of his demons still lowers it wherever it happens.");
             CombatStrength = cfg.Bind("Balance", "CombatStrength", true,
                 "The attack, defense and life points of every job that fights (attack above 0 at grade 10: guards, spies, sorcerers, pharmagicians, necromancers, cultists, demons, undead) grow with grade so that grade 10 matches the strongest adventurer class at its top level; grade 1 keeps the game's values and the boost grows evenly up to grade 10. Unique characters are left alone. The game's tables are changed in memory only. Replaces GuardStrength of plugin 0.12.0 to 0.17.0, which no longer has an effect.");
             ResourceBar = cfg.Bind("Economy", "ResourceBar", true,

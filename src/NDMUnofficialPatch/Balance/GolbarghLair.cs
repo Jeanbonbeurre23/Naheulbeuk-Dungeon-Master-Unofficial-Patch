@@ -20,14 +20,17 @@ namespace NDMUnofficialPatch.Balance
     // "Quel est ce bruit !? Zangdar !!". UpdateConditionalStatsModifierSystem.ShouldApplyConditionalStats compares the
     // count from ComputeNumberOfEntitiesOnFloor with each threshold. When someone on his floor dies,
     // DeathUpdateSystem.UnregisterFromGolbarghFloor removes him from the set and applies to the Golbargh the
-    // GolbarghPatienceInformationsConfig state EntityDiedOnFloorState (AS_State_Patience_EntityOnFloorDied).
+    // GolbarghPatienceInformationsConfig state EntityDiedOnFloorState (AS_State_Patience_EntityOnFloorDied). That
+    // state's DamageOverTimeConfig modifies the patience gauge once (AFTER_FIRST_APPLICATION) by a damage of -60, and
+    // UpdateDamageOverTimeSystem.Run subtracts the damage from the gauge, so each death refills his patience by 60, his
+    // whole gauge. Plugins 0.19.0 to 0.24.2 took that state for a loss and skipped it for deaths outside the lair; 0.24.4
+    // leaves deaths to the game.
     //
     // A postfix on ComputeNumberOfEntitiesOnFloor replaces the count, for the Golbargh, with the number of those same
     // kinds of people (minions other than Zangdar and Reivax, and adventurers, alive and in the dungeon) who stand on a
-    // square of a GOLBARGH_LAIR room. A prefix on UnregisterFromGolbarghFloor notes whether the person who died stood in
-    // the lair, and a prefix on StatesUtility.ApplyState skips the state the game then applies to the Golbargh during
-    // that call when the death happened outside it. A person's square is his GridCoordinatesComponent on his
-    // GridFloorComponent; the lair's squares are the floor squares whose RoomTileComponent names a GOLBARGH_LAIR room.
+    // square of a GOLBARGH_LAIR room. A prefix on UnregisterFromGolbarghFloor only logs each death on his floor and
+    // whether it happened in the lair. A person's square is his GridCoordinatesComponent on his GridFloorComponent; the
+    // lair's squares are the floor squares whose RoomTileComponent names a GOLBARGH_LAIR room.
     internal static unsafe class GolbarghLair
     {
         private static IntPtr _world;
@@ -40,9 +43,6 @@ namespace NDMUnofficialPatch.Balance
         private static float _countAt = -1000f;
         private static int _lastFloorCount = -1, _lastLairCount = -1;
         private static bool _errorLogged;
-
-        // The Golbargh's entity while UnregisterFromGolbarghFloor runs for a death outside his lair, otherwise -1.
-        internal static int SuppressDeathStateFor = -1;
 
         internal static void ReportError(string what, Exception e)
         {
@@ -159,7 +159,6 @@ namespace NDMUnofficialPatch.Balance
 
         private static void Prefix(int __0)
         {
-            GolbarghLair.SuppressDeathStateFor = -1;
             try
             {
                 if (!GameContext.TryWorld(out var world, out _)) return;
@@ -169,28 +168,9 @@ namespace NDMUnofficialPatch.Balance
                 IntPtr hisFloor = RawPool.Of<GridFloorComponent>(world, 4).Item(golbargh);
                 if (deadFloor == IntPtr.Zero || hisFloor == IntPtr.Zero || *(int*)deadFloor != *(int*)hisFloor) return;
                 bool inLair = GolbarghLair.InLair(world, __0);
-                GolbarghLair.SuppressDeathStateFor = inLair ? -1 : golbargh;
-                Plugin.Logger.LogInfo($"[Golbargh] a death on his floor (entity {__0}), {(inLair ? "in his lair: it upsets him" : "outside his lair: it does not upset him")}");
+                Plugin.Logger.LogInfo($"[Golbargh] a death on his floor (entity {__0}), {(inLair ? "in his lair" : "outside his lair")}: the game refills his patience");
             }
             catch (Exception e) { GolbarghLair.ReportError("placing a death on the Golbargh's floor", e); }
-        }
-
-        private static void Postfix() => GolbarghLair.SuppressDeathStateFor = -1;
-    }
-
-    [HarmonyPatch(typeof(StatesUtility), nameof(StatesUtility.ApplyState), new[] { typeof(int), typeof(StateEntityConfig), typeof(int), typeof(bool) })]
-    internal static class GolbarghDeathStatePatch
-    {
-        private static bool Prepare() => Settings.GolbarghLairOnly.Value;
-
-        // ApplyState(int entity, StateEntityConfig stateEntityConfig, int sourceEntity, bool doStateTreatments), the overload
-        // at RVA 0xcd1ef0 that UnregisterFromGolbarghFloor calls once, at its end, with the Golbargh as entity.
-        private static bool Prefix(int __0, ref int __result)
-        {
-            if (GolbarghLair.SuppressDeathStateFor < 0 || __0 != GolbarghLair.SuppressDeathStateFor) return true;
-            GolbarghLair.SuppressDeathStateFor = -1;
-            __result = -1;
-            return false;
         }
     }
 }

@@ -2,7 +2,7 @@
 
 An unofficial patch for *Naheulbeuk's Dungeon Master*, Steam version 1.8. It fixes glitches that players still report, adds safety nets for situations where the game gets stuck, adds management tools, and changes part of the game's balance. Each change can be turned off on its own in a settings file.
 
-Version 0.24.2, by Jeanbonbeurre23. This patch is not made or endorsed by the developers of the game.
+Version 0.24.4, by Jeanbonbeurre23. This patch is not made or endorsed by the developers of the game.
 
 *La version française suit la version anglaise : [Français](#français).*
 
@@ -15,6 +15,7 @@ Every change below is active once the patch is installed. The settings file (see
 - A click on a button or panel of the interface no longer also selects the room or character behind it, and no longer moves the camera there.
 - A click on a furniture icon while adding walls, removing walls or deleting now switches the builder to furniture. When the walls cannot be validated, the builder's popup shows the tool actually in use.
 - The builder no longer marks a whole floor as not accessible when the floor is connected but its check from the stairs failed to start.
+- A visual effect that the game attaches to something without a visual is skipped. In the game, such an effect throws an error on every frame and stops every system that runs after it, builders included. A save made while this was happening is cleaned when it loads.
 - When every pharmagician lies in bed waiting to be healed, one of them gets up and heals the others, so wounded minions no longer wait forever.
 - With UnityExplorer installed, clicks on the game's menus no longer reach the dungeon behind them.
 
@@ -48,7 +49,7 @@ Every change below is active once the patch is installed. The settings file (see
 - The fighting minions (guards, spies, sorcerers, pharmagicians, necromancers, cultists, demons, undead) grow with their grade so that grade 10 matches the strongest adventurer at his top level. Grade 1 keeps the game's values.
 - A loaded trap always goes off under an adventurer and never under one of your minions.
 - A domestic cleans a 5 by 5 patch at each cleaning stop, where the game cleans 5 squares.
-- The Golbargh is disturbed only by the people standing in his lair, not by everyone on his floor.
+- The Golbargh is disturbed only by the people standing in his lair, not by everyone on his floor. A death on his floor still refills his patience, as in the game.
 - While a unique raid still needs raids won against a faction, new ordinary raids go to that faction's territory 9 times out of 10.
 
 The patch also writes what it does to `BepInEx\LogOutput.log` and to one file per launch in `BepInEx\NDMUnofficialPatch-logs`. The `Diagnostics` settings turn off its extra diagnostic logging. The patch's own interface elements are in English.
@@ -63,8 +64,8 @@ The patch also writes what it does to `BepInEx\LogOutput.log` and to one file pe
 1. Find the game's folder: in Steam, right-click *Naheulbeuk's Dungeon Master*, then **Manage › Browse local files**. It is the folder that contains `NDM.exe`.
 2. Download BepInEx: [BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788+5b766a3.zip](https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip), from the [BepInEx bleeding-edge builds page](https://builds.bepinex.dev/projects/bepinex_be). Extract the archive into the game's folder, so that `BepInEx`, `dotnet`, `winhttp.dll` and `doorstop_config.ini` sit next to `NDM.exe`.
 3. Start the game once, wait for the main menu, then quit. This first start takes several minutes longer than usual while BepInEx prepares itself; the next ones take the usual time.
-4. Download `NDMUnofficialPatch-0.24.2.zip` from the Releases page and extract it into the game's folder. The patch must end up as `BepInEx\plugins\NDMUnofficialPatch\NDMUnofficialPatch.dll`.
-5. Start the game. In `BepInEx\LogOutput.log`, the lines `NDM Unofficial Patch 0.24.2 loading` and `Known game build` show that the patch is running.
+4. Download `NDMUnofficialPatch-0.24.4.zip` from the Releases page and extract it into the game's folder. The patch must end up as `BepInEx\plugins\NDMUnofficialPatch\NDMUnofficialPatch.dll`.
+5. Start the game. In `BepInEx\LogOutput.log`, the lines `NDM Unofficial Patch 0.24.4 loading` and `Known game build` show that the patch is running.
 
 ## Settings
 
@@ -117,7 +118,7 @@ The patch's code, documentation and scripts are released under the GNU General P
 
 Un patch non officiel pour *Naheulbeuk's Dungeon Master*, version Steam 1.8. Il corrige des bugs que les joueurs signalent encore, ajoute des garde-fous pour les situations où le jeu se bloque, ajoute des outils de gestion et modifie une partie de l'équilibrage. Chaque changement peut être désactivé séparément dans un fichier de réglages.
 
-Version 0.24.2, par Jeanbonbeurre23. Ce patch n'est ni réalisé ni approuvé par les développeurs du jeu.
+Version 0.24.4, par Jeanbonbeurre23. Ce patch n'est ni réalisé ni approuvé par les développeurs du jeu.
 
 ### Ce qu'il fait
 
@@ -128,6 +129,7 @@ Tous les changements ci-dessous sont actifs dès que le patch est installé. Le 
 - Un clic sur un bouton ou un panneau de l'interface ne sélectionne plus aussi la salle ou le personnage situé derrière, et ne déplace plus la caméra vers lui.
 - Un clic sur une icône de mobilier pendant l'ajout ou le retrait de murs, ou la suppression, fait bien passer le constructeur au mobilier. Quand les murs ne peuvent pas être validés, la fenêtre du constructeur affiche l'outil réellement utilisé.
 - Le constructeur ne déclare plus tout un étage inaccessible quand l'étage est relié mais que sa vérification depuis l'escalier n'a pas démarré.
+- Un effet visuel que le jeu attache à quelque chose sans visuel est ignoré. Dans le jeu, un tel effet provoque une erreur à chaque image et arrête tous les systèmes qui s'exécutent après lui, constructeurs compris. Une sauvegarde faite pendant ce blocage est nettoyée à son chargement.
 - Quand tous les pharmagiciens sont couchés en attendant d'être soignés, l'un d'eux se lève et soigne les autres, si bien que les sbires blessés n'attendent plus sans fin.
 - Avec UnityExplorer installé, les clics sur les menus du jeu n'atteignent plus le donjon situé derrière.
 
@@ -161,7 +163,7 @@ Tous les changements ci-dessous sont actifs dès que le patch est installé. Le 
 - Les sbires combattants (gardes, espions, sorciers, pharmagiciens, nécromanciens, cultistes, démons, morts-vivants) progressent avec leur grade de sorte qu'au grade 10 ils valent l'aventurier le plus fort à son niveau maximal. Le grade 1 garde les valeurs du jeu.
 - Un piège chargé se déclenche toujours sous un aventurier et jamais sous l'un de vos sbires.
 - Un domestique nettoie un carré de 5 sur 5 à chaque arrêt de nettoyage, là où le jeu nettoie 5 cases.
-- Le Golbargh n'est dérangé que par les personnes présentes dans son antre, et non par tout son étage.
+- Le Golbargh n'est dérangé que par les personnes présentes dans son antre, et non par tout son étage. Un décès à son étage remplit toujours sa patience, comme dans le jeu.
 - Tant qu'un raid unique attend encore des raids gagnés contre une faction, les nouveaux raids ordinaires vont 9 fois sur 10 sur le territoire de cette faction.
 
 Le patch écrit aussi ce qu'il fait dans `BepInEx\LogOutput.log` et dans un fichier par lancement dans `BepInEx\NDMUnofficialPatch-logs`. Les réglages `Diagnostics` désactivent ses journaux de diagnostic supplémentaires. Les éléments d'interface propres au patch sont en anglais.
@@ -176,8 +178,8 @@ Le patch écrit aussi ce qu'il fait dans `BepInEx\LogOutput.log` et dans un fich
 1. Trouver le dossier du jeu : dans Steam, clic droit sur *Naheulbeuk's Dungeon Master*, puis **Gérer › Parcourir les fichiers locaux**. C'est le dossier qui contient `NDM.exe`.
 2. Télécharger BepInEx : [BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788+5b766a3.zip](https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip), depuis la [page des builds bleeding-edge de BepInEx](https://builds.bepinex.dev/projects/bepinex_be). Extraire l'archive dans le dossier du jeu, de sorte que `BepInEx`, `dotnet`, `winhttp.dll` et `doorstop_config.ini` se trouvent à côté de `NDM.exe`.
 3. Lancer le jeu une fois, attendre le menu principal, puis quitter. Ce premier lancement prend plusieurs minutes de plus que d'habitude, le temps que BepInEx se prépare ; les suivants prennent le temps habituel.
-4. Télécharger `NDMUnofficialPatch-0.24.2.zip` depuis la page Releases et l'extraire dans le dossier du jeu. Le patch doit se trouver en `BepInEx\plugins\NDMUnofficialPatch\NDMUnofficialPatch.dll`.
-5. Lancer le jeu. Dans `BepInEx\LogOutput.log`, les lignes `NDM Unofficial Patch 0.24.2 loading` et `Known game build` indiquent que le patch fonctionne.
+4. Télécharger `NDMUnofficialPatch-0.24.4.zip` depuis la page Releases et l'extraire dans le dossier du jeu. Le patch doit se trouver en `BepInEx\plugins\NDMUnofficialPatch\NDMUnofficialPatch.dll`.
+5. Lancer le jeu. Dans `BepInEx\LogOutput.log`, les lignes `NDM Unofficial Patch 0.24.4 loading` et `Known game build` indiquent que le patch fonctionne.
 
 ### Réglages
 
