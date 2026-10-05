@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>NDMUnofficialPatch</AssemblyName>
+    <RootNamespace>NDMUnofficialPatch</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <Version>0.24.0</Version>
+  </PropertyGroup>
+
+  <!-- References point at the local game install. Nothing from the game is copied into the build output. -->
+  <ItemGroup>
+    <Reference Include="$(GameDir)\BepInEx\core\BepInEx.Core.dll" Private="false" />
+    <Reference Include="$(GameDir)\BepInEx\core\BepInEx.Unity.IL2CPP.dll" Private="false" />
+    <Reference Include="$(GameDir)\BepInEx\core\BepInEx.Unity.Common.dll" Private="false" />
+    <Reference Include="$(GameDir)\BepInEx\core\0Harmony.dll" Private="false" />
+    <Reference Include="$(GameDir)\BepInEx\core\Il2CppInterop.Runtime.dll" Private="false" />
+    <Reference Include="$(GameDir)\BepInEx\core\Il2CppInterop.Common.dll" Private="false" />
+    <Reference Include="$(GameDir)\BepInEx\interop\*.dll" Private="false" />
+  </ItemGroup>
+
+  <!-- After each build, copy the plugin into the game's BepInEx\plugins folder. Build with -p:Deploy=false to leave
+       the game's copy alone, for instance while the game is running. -->
+  <Target Name="DeployToGame" AfterTargets="Build" Condition="'$(GameDir)' != '' And '$(Deploy)' != 'false'">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(GameDir)\BepInEx\plugins\NDMUnofficialPatch" />
+    <Message Importance="high" Text="Deployed $(TargetFileName) to $(GameDir)\BepInEx\plugins\NDMUnofficialPatch" />
+  </Target>
+</Project>

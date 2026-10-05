@@ -1,0 +1,4 @@
+<Project>
+  <!-- GamePath.props is machine-specific and not committed. It defines GameDir. -->
+  <Import Project="$(MSBuildThisFileDirectory)GamePath.props" Condition="Exists('$(MSBuildThisFileDirectory)GamePath.props')" />
+</Project>

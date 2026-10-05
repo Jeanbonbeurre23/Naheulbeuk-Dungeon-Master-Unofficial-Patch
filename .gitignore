@@ -1,0 +1,9 @@
+# Local tools, downloads, recon dumps and anything derived from game files
+_local/
+# Machine-specific game path
+GamePath.props
+bin/
+obj/
+*.user
+.vs/
+__pycache__/
