@@ -23,3 +23,5 @@ The patch, added on 1 October 2026, gets one pharmagician up at a time rather th
 ## Limits
 
 The patch does not change why minions get wounded, how long a heal takes, or how many pharmagicians the dungeon needs. With a single pharmagician who is wounded, the game already ends his wait, and the patch then also keeps him from choosing REQUEST_HEAL again, so he works wounded until another pharmagician exists. The effect of carrying a wound while working was not read in the code.
+
+Since 0.25.0, necromancers given the pharmagician's heal components to heal vampires (`necromancer-cultist-healing.md`) are left out of the pharmagicians the patch watches.

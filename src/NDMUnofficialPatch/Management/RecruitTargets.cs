@@ -282,7 +282,12 @@ namespace NDMUnofficialPatch.Management
             int have = CountMinions(world, size).TryGetValue(key, out int n) ? n : 0;
             row.Value.text = keep.ToString(CultureInfo.InvariantCulture);
             string state = keep == 0 ? "" : have >= keep ? ", kept" : GameContext.Minions.HasEnoughPlaceForMinions(1) ? ", dungeon full" : ", recruiting";
-            row.Have.text = $"you have {have}{state}";
+            string status = $"you have {have}{state}";
+            if (row.Have.text != status)
+            {
+                row.Have.text = status;
+                Fit(row.Have);
+            }
         }
 
         private static void Change(Row row, int direction)
@@ -319,27 +324,43 @@ namespace NDMUnofficialPatch.Management
                 Transform parent = recruitRect.parent;
                 float height = Math.Max(40f, recruitRect.rect.height);
                 float size = Math.Max(20f, label.fontSize);
+                float statusHeight = Math.Max(24f, size * 0.9f);
 
+                // Two lines under the Recruit button: "Keep - N +", then "you have N, state". Each text is as wide as
+                // its own content, measured in the button's font, and never cut (0.20.0 to 0.24.4 gave each part a fixed
+                // width, which cut "Keep" and the count in the game's larger fonts).
                 var root = new GameObject("NDMUP_RecruitTarget");
                 var rect = root.AddComponent<RectTransform>();
                 rect.SetParent(parent, false);
-                var h = root.AddComponent<HorizontalLayoutGroup>();
+                var v = root.AddComponent<VerticalLayoutGroup>();
+                v.childControlWidth = true;
+                v.childControlHeight = true;
+                v.childForceExpandWidth = false;
+                v.childForceExpandHeight = false;
+                v.spacing = 2f;
+                v.childAlignment = TextAnchor.MiddleCenter;
+                var le = root.AddComponent<LayoutElement>();
+                le.minHeight = height + statusHeight + 2f;
+                le.preferredHeight = height + statusHeight + 2f;
+
+                var controls = new GameObject("Controls");
+                controls.AddComponent<RectTransform>().SetParent(root.transform, false);
+                var h = controls.AddComponent<HorizontalLayoutGroup>();
                 h.childControlWidth = true;
                 h.childControlHeight = true;
                 h.childForceExpandWidth = false;
                 h.childForceExpandHeight = true;
-                h.spacing = 10f;
+                h.spacing = 14f;
                 h.childAlignment = TextAnchor.MiddleCenter;
-                var le = root.AddComponent<LayoutElement>();
-                le.minHeight = height;
-                le.preferredHeight = height;
-                le.preferredWidth = 420f;
+                var controlsLe = controls.AddComponent<LayoutElement>();
+                controlsLe.minHeight = height;
+                controlsLe.preferredHeight = height;
 
-                Text(label, root.transform, "Keep", size, height, 90f);
-                Link(label, root.transform, "−", size * 1.3f, height, 44f, () => Change(row, -1));
-                row.Value = Text(label, root.transform, "0", size, height, 60f);
-                Link(label, root.transform, "+", size * 1.3f, height, 44f, () => Change(row, +1));
-                row.Have = Text(label, root.transform, "", size * 0.8f, height, 200f);
+                Text(label, controls.transform, "Keep", size, height);
+                Link(label, controls.transform, "-", size * 1.3f, height, () => Change(row, -1));
+                row.Value = Text(label, controls.transform, "0", size, height, "000");
+                Link(label, controls.transform, "+", size * 1.3f, height, () => Change(row, +1));
+                row.Have = Text(label, root.transform, "", size * 0.7f, statusHeight);
 
                 var group = parent.GetComponent<LayoutGroup>();
                 rect.SetSiblingIndex(recruitRect.GetSiblingIndex() + 1);
@@ -349,7 +370,7 @@ namespace NDMUnofficialPatch.Management
                     rect.anchorMin = recruitRect.anchorMin;
                     rect.anchorMax = recruitRect.anchorMax;
                     rect.pivot = recruitRect.pivot;
-                    rect.sizeDelta = new Vector2(420f, height);
+                    rect.sizeDelta = new Vector2(420f, height + statusHeight + 2f);
                     rect.anchoredPosition = recruitRect.anchoredPosition + new Vector2(0f, -(height + 8f));
                 }
                 row.Root = root;
@@ -379,7 +400,8 @@ namespace NDMUnofficialPatch.Management
             return sb.ToString();
         }
 
-        private static TextMeshProUGUI Text(TextMeshProUGUI template, Transform parent, string text, float size, float height, float width)
+        // A copy of the template's text, sized to its content: widthSample, when given, is the widest text it will hold.
+        private static TextMeshProUGUI Text(TextMeshProUGUI template, Transform parent, string text, float size, float height, string widthSample = null)
         {
             var go = Object.Instantiate(template.gameObject, parent, false).Cast<GameObject>();
             go.name = "Text";
@@ -389,20 +411,32 @@ namespace NDMUnofficialPatch.Management
             tmp.enableAutoSizing = false;
             tmp.fontSize = size;
             tmp.enableWordWrapping = false;
+            tmp.overflowMode = TextOverflowModes.Overflow;
+            tmp.margin = Vector4.zero;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.raycastTarget = false;
             tmp.text = text;
             var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
             le.minHeight = height;
             le.preferredHeight = height;
-            le.minWidth = width;
-            le.preferredWidth = width;
+            Fit(tmp, widthSample);
             return tmp;
         }
 
-        private static void Link(TextMeshProUGUI template, Transform parent, string text, float size, float height, float width, Action onClick)
+        // Sets the text's width to what its content (or the sample) needs in its own font, plus a small margin.
+        private static void Fit(TextMeshProUGUI tmp, string widthSample = null)
         {
-            var tmp = Text(template, parent, text, size, height, width);
+            var le = tmp.GetComponent<LayoutElement>();
+            if (le == null) return;
+            string sample = string.IsNullOrEmpty(widthSample) ? tmp.text : widthSample;
+            float width = string.IsNullOrEmpty(sample) ? 0f : tmp.GetPreferredValues(sample).x + 8f;
+            le.minWidth = width;
+            le.preferredWidth = width;
+        }
+
+        private static void Link(TextMeshProUGUI template, Transform parent, string text, float size, float height, Action onClick)
+        {
+            var tmp = Text(template, parent, text, size, height);
             tmp.raycastTarget = true;
             var button = tmp.gameObject.AddComponent<Button>();
             button.targetGraphic = tmp;

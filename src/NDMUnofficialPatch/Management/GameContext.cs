@@ -57,7 +57,8 @@ namespace NDMUnofficialPatch.Management
             || Settings.StorageCapacity.Value || Settings.DiagnosticsMorale.Value || Settings.RoomNeedsPanel.Value
             || Settings.CombatStrength.Value || Settings.FurnitureToolSwitch.Value || Settings.DiagnosticsUnreachable.Value
             || Settings.HealDeadlock.Value || Settings.CleaningRadius.Value > 0 || Settings.MaximumMinions.Value > 0
-            || Settings.ResourceMaximum.Value > 0 || Settings.GolbarghLairOnly.Value || Settings.RecruitTargets.Value;
+            || Settings.ResourceMaximum.Value > 0 || Settings.GolbarghLairOnly.Value || Settings.RecruitTargets.Value
+            || Balance.NecromancerCultistHealing.Needed;
 
         internal static bool Ready => _workerTaskSystem != IntPtr.Zero && _buildEventsSystem != IntPtr.Zero && _world != IntPtr.Zero;
 

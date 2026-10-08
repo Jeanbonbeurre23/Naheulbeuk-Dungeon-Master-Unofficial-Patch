@@ -78,6 +78,11 @@ namespace NDMUnofficialPatch.Management
         private int _loggedProblems = -1;
         private float _nextLog;
 
+        private float _panelTop;
+        private Transform _resourceBar;
+        private float _nextBarLookup;
+        private bool _barError;
+
         private int _focusEntity = -1;
         private int _focusFloor;
         private float _focusUntil;
@@ -147,7 +152,8 @@ namespace NDMUnofficialPatch.Management
                 var panelRt = _panel.GetComponent<RectTransform>();
                 panelRt.anchorMin = panelRt.anchorMax = new Vector2(0f, 1f);
                 panelRt.pivot = new Vector2(0f, 1f);
-                panelRt.anchoredPosition = new Vector2(24f, top - 76f);
+                _panelTop = top - 76f;
+                panelRt.anchoredPosition = new Vector2(24f, _panelTop);
                 var column = _panel.AddComponent<VerticalLayoutGroup>();
                 column.padding = new RectOffset(28, 28, 18, 18);
                 column.spacing = 10f;
@@ -359,6 +365,43 @@ namespace NDMUnofficialPatch.Management
             _current.UpdateTab();
         }
 
+        // The resource bar (Economy/ResourceBarOverlay.cs) sits at the top centre of the same HUD. When the open panel is
+        // wide enough to reach under it, the panel starts below the bar; otherwise it keeps its place under the tab. Both
+        // are children of the HUD, so their edges compare in its space. Before 0.24.5 the panel's header and first row
+        // ran under the bar.
+        private void KeepBelowResourceBar()
+        {
+            if (_barError) return;
+            try
+            {
+                if (Time.unscaledTime >= _nextBarLookup)
+                {
+                    _nextBarLookup = Time.unscaledTime + 2f;
+                    _resourceBar = _page.transform.Find("NDMUnofficialPatch_ResourceBar");
+                }
+                var panelRt = _panel.GetComponent<RectTransform>();
+                float y = _panelTop;
+                if (_resourceBar != null && !_resourceBar.WasCollected && _resourceBar.gameObject.activeInHierarchy)
+                {
+                    var barRt = _resourceBar.GetComponent<RectTransform>();
+                    Rect bar = barRt.rect, panel = panelRt.rect;
+                    Vector3 barAt = barRt.localPosition, panelAt = panelRt.localPosition;
+                    float barLeft = barAt.x + bar.xMin, barRight = barAt.x + bar.xMax, barBottom = barAt.y + bar.yMin;
+                    float panelLeft = panelAt.x + panel.xMin, panelRight = panelAt.x + panel.xMax;
+                    // The panel's top edge where it would stand at its own place under the tab.
+                    float ownTop = panelAt.y + panel.yMax - (panelRt.anchoredPosition.y - _panelTop);
+                    float limit = barBottom - 12f;
+                    if (panelRight > barLeft && panelLeft < barRight && ownTop > limit) y = _panelTop - (ownTop - limit);
+                }
+                if (Math.Abs(panelRt.anchoredPosition.y - y) > 0.5f) panelRt.anchoredPosition = new Vector2(panelRt.anchoredPosition.x, y);
+            }
+            catch (Exception e)
+            {
+                _barError = true;
+                Plugin.Logger.LogWarning($"[RoomNeeds] placing the panel below the resource bar failed, the panel stays under its tab: {e.Message}");
+            }
+        }
+
         private void UpdateTab()
         {
             _tabText.text = "Room needs" + (_problems > 0 ? $" ({_problems})" : "") + (_open ? "  -" : "  +");
@@ -368,6 +411,7 @@ namespace NDMUnofficialPatch.Management
         private void Tick()
         {
             FollowFocus();
+            if (_open) KeepBelowResourceBar();
             if (Time.unscaledTime < _nextRefresh) return;
             _nextRefresh = Time.unscaledTime + 2f;
             try

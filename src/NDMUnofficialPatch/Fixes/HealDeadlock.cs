@@ -83,7 +83,8 @@ namespace NDMUnofficialPatch.Fixes
             var outside = RawPool.Of<OutsideDungeonTag>(world, -1);
             var wounded = RawPool.Of<RequestHealComponent>(world, -1);
             var brains = RawPool.Of<BehaviourTreeOwnerComponent>(world, -1);
-            var list = healers.Entities().Where(e => world.IsEntityAlive(e, size) && !dead.Has(e) && !outside.Has(e)).ToList();
+            // Necromancers given the heal by NecromancerCultistHealing heal vampires only and are not counted here.
+            var list = healers.Entities().Where(e => world.IsEntityAlive(e, size) && !dead.Has(e) && !outside.Has(e) && !Balance.NecromancerCultistHealing.IsNecromancer(world, e)).ToList();
             bool Waiting(int e)
             {
                 IntPtr b = brains.Item(e);

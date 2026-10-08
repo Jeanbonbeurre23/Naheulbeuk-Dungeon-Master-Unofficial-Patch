@@ -8,7 +8,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
-    <Version>0.24.4</Version>
+    <Version>0.25.0</Version>
   </PropertyGroup>
 
   <!-- References point at the local game install. Nothing from the game is copied into the build output. -->

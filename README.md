@@ -2,7 +2,7 @@
 
 An unofficial patch for *Naheulbeuk's Dungeon Master*, Steam version 1.8. It fixes glitches that players still report, adds safety nets for situations where the game gets stuck, adds management tools, and changes part of the game's balance. Each change can be turned off on its own in a settings file.
 
-Version 0.24.4, by Jeanbonbeurre23. This patch is not made or endorsed by the developers of the game.
+Version 0.25.0, by Jeanbonbeurre23. This patch is not made or endorsed by the developers of the game.
 
 *La version française suit la version anglaise : [Français](#français).*
 
@@ -31,7 +31,7 @@ Every change below is active once the patch is installed. The settings file (see
 
 - The management tab of the Minions window is wider and shows minions in one column per group of origins: greenskins, humans, elves and drows by default.
 - The character sheet gets a third page, "Assigned rooms", to give each minion his own dormitory, bathroom, canteen, break room and job room, and to forbid him rooms.
-- In a recruitment candidate's window, a "Keep − N +" row sets how many minions of that job and origin the dungeon keeps, and the patch recruits listed candidates until the number is reached.
+- In a recruitment candidate's window, a "Keep - N +" row sets how many minions of that job and origin the dungeon keeps, and the patch recruits listed candidates until the number is reached.
 - A tab at the top left of the screen opens a panel that shows, for each room type the minions look for, whether they found a free piece of furniture there, and names those who did not.
 
 **Economy**
@@ -47,6 +47,8 @@ Every change below is active once the patch is installed. The settings file (see
 - Every new game has 12 floors: five copies of floor 4 are inserted between floor 4 and the tavern. They unlock with floor 4 and each costs floor 4's upkeep. See [Saves](#saves) before starting a game.
 - The dungeon holds up to 500 minions.
 - The fighting minions (guards, spies, sorcerers, pharmagicians, necromancers, cultists, demons, undead) grow with their grade so that grade 10 matches the strongest adventurer at his top level. Grade 1 keeps the game's values.
+- Undead lose life only when they are harmed. In the game they lose life by themselves until they die, more slowly the more compost is stored.
+- Necromancers heal undead and vampires, and cultists heal their demons, outside fights. A necromancer or a cultist who stays 10 seconds next to a wounded patient gives him a pharmagician's heal, and necromancers also go to heal vampires lying in an infirmary bed.
 - A loaded trap always goes off under an adventurer and never under one of your minions.
 - A domestic cleans a 5 by 5 patch at each cleaning stop, where the game cleans 5 squares.
 - The Golbargh is disturbed only by the people standing in his lair, not by everyone on his floor. A death on his floor still refills his patience, as in the game.
@@ -64,8 +66,8 @@ The patch also writes what it does to `BepInEx\LogOutput.log` and to one file pe
 1. Find the game's folder: in Steam, right-click *Naheulbeuk's Dungeon Master*, then **Manage › Browse local files**. It is the folder that contains `NDM.exe`.
 2. Download BepInEx: [BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788+5b766a3.zip](https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip), from the [BepInEx bleeding-edge builds page](https://builds.bepinex.dev/projects/bepinex_be). Extract the archive into the game's folder, so that `BepInEx`, `dotnet`, `winhttp.dll` and `doorstop_config.ini` sit next to `NDM.exe`.
 3. Start the game once, wait for the main menu, then quit. This first start takes several minutes longer than usual while BepInEx prepares itself; the next ones take the usual time.
-4. Download `NDMUnofficialPatch-0.24.4.zip` from the Releases page and extract it into the game's folder. The patch must end up as `BepInEx\plugins\NDMUnofficialPatch\NDMUnofficialPatch.dll`.
-5. Start the game. In `BepInEx\LogOutput.log`, the lines `NDM Unofficial Patch 0.24.4 loading` and `Known game build` show that the patch is running.
+4. Download `NDMUnofficialPatch-0.25.0.zip` from the Releases page and extract it into the game's folder. The patch must end up as `BepInEx\plugins\NDMUnofficialPatch\NDMUnofficialPatch.dll`.
+5. Start the game. In `BepInEx\LogOutput.log`, the lines `NDM Unofficial Patch 0.25.0 loading` and `Known game build` show that the patch is running.
 
 ## Settings
 
@@ -94,6 +96,8 @@ Delete the folder `BepInEx\plugins\NDMUnofficialPatch`. To remove BepInEx as wel
 
 Keep the patch for saves with inserted floors: loading them without it was not tested. Other saves load without it. Some values the patch wrote into them stay: lowered salaries and the attack and defense of fighting minions until the minion's next grade change, when the game recomputes them, and the extra life of fighting minions for good.
 
+Before uninstalling, set `NecromancersAndCultistsHeal = false` in `[Balance]`, then load each save once and save it. At that load the patch removes from its necromancers the pharmagician's heal components it gave them. Otherwise they keep a pharmagician's heal, for every minion.
+
 ## Building from source
 
 The build needs the .NET SDK 6 or later, and the game with BepInEx installed and started once. Create `GamePath.props` at the root of the repository, pointing at the game's folder:
@@ -118,7 +122,7 @@ The patch's code, documentation and scripts are released under the GNU General P
 
 Un patch non officiel pour *Naheulbeuk's Dungeon Master*, version Steam 1.8. Il corrige des bugs que les joueurs signalent encore, ajoute des garde-fous pour les situations où le jeu se bloque, ajoute des outils de gestion et modifie une partie de l'équilibrage. Chaque changement peut être désactivé séparément dans un fichier de réglages.
 
-Version 0.24.4, par Jeanbonbeurre23. Ce patch n'est ni réalisé ni approuvé par les développeurs du jeu.
+Version 0.25.0, par Jeanbonbeurre23. Ce patch n'est ni réalisé ni approuvé par les développeurs du jeu.
 
 ### Ce qu'il fait
 
@@ -145,7 +149,7 @@ Tous les changements ci-dessous sont actifs dès que le patch est installé. Le 
 
 - L'onglet de gestion de la fenêtre des sbires est élargi et range les sbires en une colonne par groupe d'origines : peaux-vertes, humains, elfes et drows par défaut.
 - La fiche de personnage gagne une troisième page, « Assigned rooms », pour attribuer à chaque sbire son dortoir, sa salle de bain, sa cantine, sa salle de repos et sa salle de travail, et pour lui interdire des salles.
-- Dans la fenêtre d'un candidat au recrutement, une ligne « Keep − N + » fixe le nombre de sbires de ce métier et de cette origine que le donjon conserve, et le patch recrute les candidats proposés jusqu'à l'atteindre.
+- Dans la fenêtre d'un candidat au recrutement, une ligne « Keep - N + » fixe le nombre de sbires de ce métier et de cette origine que le donjon conserve, et le patch recrute les candidats proposés jusqu'à l'atteindre.
 - Un onglet en haut à gauche de l'écran ouvre un panneau qui indique, pour chaque type de salle que cherchent les sbires, s'ils y ont trouvé un meuble libre, et nomme ceux qui n'en ont pas trouvé.
 
 **Économie**
@@ -161,6 +165,8 @@ Tous les changements ci-dessous sont actifs dès que le patch est installé. Le 
 - Chaque nouvelle partie compte 12 étages : cinq copies de l'étage 4 sont insérées entre l'étage 4 et la taverne. Elles se débloquent avec l'étage 4 et coûtent chacune son entretien. Lire [Sauvegardes](#sauvegardes) avant de commencer une partie.
 - Le donjon peut accueillir jusqu'à 500 sbires.
 - Les sbires combattants (gardes, espions, sorciers, pharmagiciens, nécromanciens, cultistes, démons, morts-vivants) progressent avec leur grade de sorte qu'au grade 10 ils valent l'aventurier le plus fort à son niveau maximal. Le grade 1 garde les valeurs du jeu.
+- Les morts-vivants ne perdent de la vie que lorsqu'ils sont blessés. Dans le jeu, ils en perdent d'eux-mêmes jusqu'à mourir, d'autant plus lentement que le stock de compost est grand.
+- Les nécromanciens soignent les morts-vivants et les vampires, et les cultistes leurs démons, hors des combats. Un nécromancien ou un cultiste qui reste 10 secondes à côté d'un blessé lui donne le soin d'un pharmagicien, et les nécromanciens vont aussi soigner les vampires couchés dans un lit d'infirmerie.
 - Un piège chargé se déclenche toujours sous un aventurier et jamais sous l'un de vos sbires.
 - Un domestique nettoie un carré de 5 sur 5 à chaque arrêt de nettoyage, là où le jeu nettoie 5 cases.
 - Le Golbargh n'est dérangé que par les personnes présentes dans son antre, et non par tout son étage. Un décès à son étage remplit toujours sa patience, comme dans le jeu.
@@ -178,8 +184,8 @@ Le patch écrit aussi ce qu'il fait dans `BepInEx\LogOutput.log` et dans un fich
 1. Trouver le dossier du jeu : dans Steam, clic droit sur *Naheulbeuk's Dungeon Master*, puis **Gérer › Parcourir les fichiers locaux**. C'est le dossier qui contient `NDM.exe`.
 2. Télécharger BepInEx : [BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788+5b766a3.zip](https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip), depuis la [page des builds bleeding-edge de BepInEx](https://builds.bepinex.dev/projects/bepinex_be). Extraire l'archive dans le dossier du jeu, de sorte que `BepInEx`, `dotnet`, `winhttp.dll` et `doorstop_config.ini` se trouvent à côté de `NDM.exe`.
 3. Lancer le jeu une fois, attendre le menu principal, puis quitter. Ce premier lancement prend plusieurs minutes de plus que d'habitude, le temps que BepInEx se prépare ; les suivants prennent le temps habituel.
-4. Télécharger `NDMUnofficialPatch-0.24.4.zip` depuis la page Releases et l'extraire dans le dossier du jeu. Le patch doit se trouver en `BepInEx\plugins\NDMUnofficialPatch\NDMUnofficialPatch.dll`.
-5. Lancer le jeu. Dans `BepInEx\LogOutput.log`, les lignes `NDM Unofficial Patch 0.24.4 loading` et `Known game build` indiquent que le patch fonctionne.
+4. Télécharger `NDMUnofficialPatch-0.25.0.zip` depuis la page Releases et l'extraire dans le dossier du jeu. Le patch doit se trouver en `BepInEx\plugins\NDMUnofficialPatch\NDMUnofficialPatch.dll`.
+5. Lancer le jeu. Dans `BepInEx\LogOutput.log`, les lignes `NDM Unofficial Patch 0.25.0 loading` et `Known game build` indiquent que le patch fonctionne.
 
 ### Réglages
 
@@ -207,6 +213,8 @@ Le patch construit les nouveaux étages au premier chargement de la copie. Le do
 Supprimer le dossier `BepInEx\plugins\NDMUnofficialPatch`. Pour retirer aussi BepInEx, supprimer `BepInEx`, `dotnet`, `winhttp.dll`, `doorstop_config.ini`, `.doorstop_version` et `changelog.txt` du dossier du jeu.
 
 Garder le patch pour les sauvegardes avec des étages insérés : leur chargement sans lui n'a pas été testé. Les autres se chargent sans lui. Certaines valeurs que le patch y a écrites restent : les salaires abaissés, ainsi que l'attaque et la défense des sbires combattants, jusqu'au prochain changement de grade du sbire, quand le jeu les recalcule, et la vie supplémentaire des sbires combattants définitivement.
+
+Avant de désinstaller, mettre `NecromancersAndCultistsHeal = false` dans `[Balance]`, puis charger et sauvegarder une fois chaque partie : le patch retire alors à ses nécromanciens les composants de soin de pharmagicien qu'il leur a donnés. Sinon, ils gardent le soin d'un pharmagicien, pour tous les sbires.
 
 ### Compiler depuis les sources
 

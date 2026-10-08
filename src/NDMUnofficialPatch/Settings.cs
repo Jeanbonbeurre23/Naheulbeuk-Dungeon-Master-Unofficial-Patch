@@ -37,6 +37,8 @@ namespace NDMUnofficialPatch
         internal static ConfigEntry<bool> TrapTriggers;
         internal static ConfigEntry<int> MaximumMinions;
         internal static ConfigEntry<bool> GolbarghLairOnly;
+        internal static ConfigEntry<bool> UndeadNoDecay;
+        internal static ConfigEntry<bool> NecromancersAndCultistsHeal;
         internal static ConfigEntry<bool> ResourceBar;
         internal static ConfigEntry<bool> MinimumSalaries;
         internal static ConfigEntry<bool> Bilan;
@@ -98,6 +100,10 @@ namespace NDMUnofficialPatch
                 new ConfigDescription("The dungeon holds up to this many minions, or the game's own maximum when that is higher: in the game, the sum of the minion places of the unlocked floors. Recruitment and guard lockers check this maximum. 0 leaves the game's maximum unchanged.", new AcceptableValueRange<int>(0, 10000)));
             GolbarghLairOnly = cfg.Bind("Balance", "GolbarghLairOnly", true,
                 "The Golbargh's patience falls faster only for the people who stand in his lair, not for everyone on his floor: in the game, 6, 12 and 18 minions and adventurers on his floor (Zangdar and Reivax excepted) make it fall faster. Deaths follow the game's rule: each death on his floor refills his patience. His patience still falls by itself, and the death of one of his demons still lowers it wherever it happens.");
+            UndeadNoDecay = cfg.Bind("Balance", "UndeadNoDecay", true,
+                "Undead (skeletons, zombies, ghosts) lose life only when they are harmed: hits, and states such as poison or burning. In the game, every undead also loses life by itself until he dies, 0.022 life points a second when the compost store is 84 to 100 % full and up to 0.067 when it is below 17 %. The undead's rule text still says that more compost makes him last longer. Demons have no such loss in the game and are not concerned.");
+            NecromancersAndCultistsHeal = cfg.Bind("Balance", "NecromancersAndCultistsHeal", true,
+                "Necromancers heal undead and vampires, and cultists heal their own demons, outside fights. A necromancer or a cultist tends one wounded patient at a time on his floor within 5 squares; after 10 seconds together, the patient gets the result of a pharmagician's heal: full life, and bleeding, poison, curses and the other healable states removed. Necromancers also take up the pharmagicians' heal for vampires lying in an infirmary bed, walking to the bed as a pharmagician does; for this the patch gives each necromancer the three heal components of the pharmagician job, which are kept in the save. With this setting off, the patch removes them from the necromancers when a save is loaded. In the game, undead and demons are never healed, and only pharmagicians heal.");
             CombatStrength = cfg.Bind("Balance", "CombatStrength", true,
                 "The attack, defense and life points of every job that fights (attack above 0 at grade 10: guards, spies, sorcerers, pharmagicians, necromancers, cultists, demons, undead) grow with grade so that grade 10 matches the strongest adventurer class at its top level; grade 1 keeps the game's values and the boost grows evenly up to grade 10. Unique characters are left alone. The game's tables are changed in memory only. Replaces GuardStrength of plugin 0.12.0 to 0.17.0, which no longer has an effect.");
             ResourceBar = cfg.Bind("Economy", "ResourceBar", true,

@@ -14,7 +14,7 @@ namespace NDMUnofficialPatch
     {
         public const string PluginGuid = "ndm.unofficialpatch";
         public const string PluginName = "NDM Unofficial Patch";
-        public const string PluginVersion = "0.24.4";
+        public const string PluginVersion = "0.25.0";
 
         internal static ManualLogSource Logger;
 
@@ -70,7 +70,7 @@ namespace NDMUnofficialPatch
             {
                 AddComponent<Management.ManagerBehaviour>();
             }
-            if (Settings.GameEventSystem.Value || Settings.FurnitureToolSwitch.Value || Settings.CombatStrength.Value || Settings.MaximumMinions.Value > 0 || Floors.FloorInsertion.Needed)
+            if (Settings.GameEventSystem.Value || Settings.FurnitureToolSwitch.Value || Settings.CombatStrength.Value || Settings.MaximumMinions.Value > 0 || Floors.FloorInsertion.Needed || Balance.NecromancerCultistHealing.Needed)
             {
                 AddComponent<Fixes.FixesBehaviour>();
             }

@@ -1,6 +1,6 @@
 # Room-needs panel
 
-Plugin 0.13.0, 30 September 2026, game 1.8. Setting `Management.RoomNeedsPanel` (on by default).
+Plugin 0.24.5, 8 October 2026, game 1.8 (first version 0.11.0; 0.13.0 changed what it shows, 0.24.5 where it stands). Setting `Management.RoomNeedsPanel` (on by default).
 
 ## Why it changed
 
@@ -11,6 +11,10 @@ Versions 0.11.0 to 0.12.2 showed, for each room type, three segments for the dir
 One row per room type: dormitory, canteen, bathroom and break room always, then every other type the minions searched in the last 3 minutes. Up to three segments name the kinds of prop the minions looked for in that room type in the last 3 minutes of real time (the kinds with the most minions who found none come first, then the most searched), with the number of minions who found a free one over the number who looked. A segment is green when all found one, amber when some did not and red when none did. A click on a segment shows a minion whose last search for that kind found none, the most recent first, and the next at each further click. The status names the minions whose most recent search in that room type, whatever the kind, found nothing, and the tab counts the room types that have such minions.
 
 The prestige bar is unchanged in form: the level preferred by the most demanding minion whose need the room type does not meet, and a mark at the best room. It no longer counts as a problem, since prestige only narrows the cook's and the training searches and never makes a search fail.
+
+## Where it stands
+
+The tab sits at the top left of the dungeon screen, below the lowest element the game already shows there. The open panel hangs under the tab, unless it is wide enough to reach under the resource bar of the patch (`Economy/ResourceBarOverlay.cs`), which sits at the top centre of the screen: it then starts 12 pixels below that bar. Both are children of the dungeon HUD, so their edges are compared in the HUD's own space, every frame while the panel is open. Before 0.24.5 the panel's header and first row ran under the resource bar.
 
 ## How it reads the game
 
