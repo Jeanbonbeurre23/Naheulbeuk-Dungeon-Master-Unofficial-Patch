@@ -34,11 +34,19 @@ namespace NDMUnofficialPatch
         internal static ConfigEntry<int> CleaningRadius;
         internal static ConfigEntry<bool> HealDeadlock;
         internal static ConfigEntry<bool> EffectParentGuard;
+        internal static ConfigEntry<bool> WaitingLineGuard;
         internal static ConfigEntry<bool> TrapTriggers;
         internal static ConfigEntry<int> MaximumMinions;
         internal static ConfigEntry<bool> GolbarghLairOnly;
         internal static ConfigEntry<bool> UndeadNoDecay;
         internal static ConfigEntry<bool> NecromancersAndCultistsHeal;
+        internal static ConfigEntry<int> HealCompulsionBelow;
+        internal static ConfigEntry<bool> SummonJobs;
+        internal static ConfigEntry<string> UndeadJobs;
+        internal static ConfigEntry<string> DemonJobs;
+        internal static ConfigEntry<bool> NeedsFirst;
+        internal static ConfigEntry<int> NeedsFirstBelow;
+        internal static ConfigEntry<bool> EveryoneTrains;
         internal static ConfigEntry<bool> ResourceBar;
         internal static ConfigEntry<bool> MinimumSalaries;
         internal static ConfigEntry<bool> Bilan;
@@ -92,6 +100,8 @@ namespace NDMUnofficialPatch
                 "When every pharmagician is waiting in bed to be healed, the one with the lowest id gets up and goes back to work, healing the others, until another pharmagician is up and not wounded; he then lies down in his turn. In the game's rule a pharmagician waiting in bed still counts as present, so wounded minions and pharmagicians can all wait with nobody left to heal them.");
             EffectParentGuard = cfg.Bind("Fixes", "EffectParentGuard", true,
                 "Skips a visual effect that a character's animation attaches to an entity without a visual, and removes, when a save loads, the effects such a request left half-built. In the game, an effect attached to the target of a character's action goes to the game's state entity when that action has no target recorded; building it then fails on every frame, and every game system that runs after it stops, builders included, while area-of-effect events pile up in the save.");
+            WaitingLineGuard = cfg.Bind("Fixes", "WaitingLineGuard", true,
+                "Keeps a character from getting in line at a room that has no waiting line, which closes the game. In the game, adventurers on a tavern visit get in line at the tavern room their quest names, and a room only gets a waiting line when a counter is built in it; with the guard, such an adventurer is put in the line of another tavern room that has a counter, or tries again when there is none.");
             TrapTriggers = cfg.Bind("Balance", "TrapTriggers", true,
                 "A loaded trap always goes off when an adventurer steps on it, deceiving traps included, and never when one of the player's minions does. In the game, a trap goes off under an adventurer 35 % of the time (deceiving traps only for the origins they target), and under a minion 1 %, plus 5 % with the Insouciant trait, plus a second 2 % for elves. The trap panel still shows the game's percentage.");
             CleaningRadius = cfg.Bind("Balance", "CleaningRadius", 2,
@@ -104,6 +114,20 @@ namespace NDMUnofficialPatch
                 "Undead (skeletons, zombies, ghosts) lose life only when they are harmed: hits, and states such as poison or burning. In the game, every undead also loses life by itself until he dies, 0.022 life points a second when the compost store is 84 to 100 % full and up to 0.067 when it is below 17 %. The undead's rule text still says that more compost makes him last longer. Demons have no such loss in the game and are not concerned.");
             NecromancersAndCultistsHeal = cfg.Bind("Balance", "NecromancersAndCultistsHeal", true,
                 "Necromancers heal undead and vampires, and cultists heal their own demons, outside fights. A necromancer or a cultist tends one wounded patient at a time on his floor within 5 squares; after 10 seconds together, the patient gets the result of a pharmagician's heal: full life, and bleeding, poison, curses and the other healable states removed. Necromancers also take up the pharmagicians' heal for vampires lying in an infirmary bed, walking to the bed as a pharmagician does; for this the patch gives each necromancer the three heal components of the pharmagician job, which are kept in the save. With this setting off, the patch removes them from the necromancers when a save is loaded. In the game, undead and demons are never healed, and only pharmagicians heal.");
+            HealCompulsionBelow = cfg.Bind("Balance", "HealCompulsionBelow", 75,
+                new ConfigDescription("With NecromancersAndCultistsHeal on, an undead or a vampire whose life is below this percentage calls the nearest free necromancer, and a demon his own cultist: the healer leaves his work, walks to him and heals him at close range, outside fights. A call ends with the heal, or after 120 seconds of game time if the healer cannot reach him. 0 turns the calls off and leaves only the heal of patients who happen to be near a healer.", new AcceptableValueRange<int>(0, 100)));
+            SummonJobs = cfg.Bind("Balance", "SummonJobs", true,
+                "Summoned undead and demons get a job by themselves, in the proportions of UndeadJobs and DemonJobs, and do it as minions of that job do: servants clean and reload traps, guards use the guard tables of the guard rooms and train in the training rooms, artisans make tools (undead) or weapons (demons), jailers carry and torture prisoners, and Library demons produce astral energy and learn spells. They gain grades as minions do. A guard is attached to a guard table, never to a locker, and summons are never recruitable. A summon who already has a job keeps it. In the game, undead only wander and fight, and demons follow their cultist. With this setting off, no new job is given, and summons given a job stop working at the next load.");
+            UndeadJobs = cfg.Bind("Balance", "UndeadJobs", "DOMESTIC:34,GUARD:33,ARTISAN:33",
+                "Shares of the jobs given to undead, as JOB:share separated by commas. Jobs: DOMESTIC (servant), GUARD, ARTISAN (tools), and NONE for undead left as the game makes them.");
+            DemonJobs = cfg.Bind("Balance", "DemonJobs", "DOMESTIC:20,GUARD:20,TORTURER:20,ARTISAN:20,LIBRARY:20",
+                "Shares of the jobs given to demons, as JOB:share separated by commas. Jobs: DOMESTIC (servant), GUARD, TORTURER (jailer), ARTISAN (weapons), LIBRARY (astral energy and spells, as sorcerers), and NONE for demons left following their cultist.");
+            NeedsFirst = cfg.Bind("Balance", "NeedsFirst", true,
+                "A minion drops his work, his idling, a chat or his training as soon as one of his needs (hunger, sleep, fun, hygiene, toilet) falls below NeedsFirstBelow percent or his pay is due, and goes to satisfy the most urgent one. A fight, a wounded minion's wait for a healer and another need already being satisfied are not interrupted. When the need cannot be met (no free toilet, bed or table), he goes back to what the game chooses for him and tries again 30 seconds later. In the game, a working minion turns to a need only when his current task ends, and to the toilet, a wash or fun only below about 27%, when his morale is already falling.");
+            NeedsFirstBelow = cfg.Bind("Balance", "NeedsFirstBelow", 40,
+                new ConfigDescription("With NeedsFirst on, the percentage below which a need makes a minion drop what he is doing. At 40% the game shows the need above his head; below 30% his morale falls.", new AcceptableValueRange<int>(1, 100)));
+            EveryoneTrains = cfg.Bind("Balance", "EveryoneTrains", true,
+                "Every minion with a job, summons included, can train in the training room to gain grades. Guards train as in the game; the others train only when their job has nothing for them to do. In the game, only guards train. With this setting off, training is removed again from every non-guard.");
             CombatStrength = cfg.Bind("Balance", "CombatStrength", true,
                 "The attack, defense and life points of every job that fights (attack above 0 at grade 10: guards, spies, sorcerers, pharmagicians, necromancers, cultists, demons, undead) grow with grade so that grade 10 matches the strongest adventurer class at its top level; grade 1 keeps the game's values and the boost grows evenly up to grade 10. Unique characters are left alone. The game's tables are changed in memory only. Replaces GuardStrength of plugin 0.12.0 to 0.17.0, which no longer has an effect.");
             ResourceBar = cfg.Bind("Economy", "ResourceBar", true,

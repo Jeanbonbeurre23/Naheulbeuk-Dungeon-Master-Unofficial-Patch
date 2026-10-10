@@ -1,6 +1,6 @@
 # Necromancers and cultists heal
 
-Plugin 0.25.0, 8 October 2026, game 1.8. Setting `Balance.NecromancersAndCultistsHeal` (on by default).
+Plugin 0.25.0, 8 October 2026, and 0.26.1, 9 October 2026, which adds the call, game 1.8. Settings `Balance.NecromancersAndCultistsHeal` (on by default) and `Balance.HealCompulsionBelow` (75 by default).
 
 ## What it does
 
@@ -12,6 +12,10 @@ Since undead and demons cannot lie in a bed, the patch gives undead, vampires an
 
 Twice a second, each necromancer and each cultist who is not fighting tends one patient at a time. A necromancer's patients are wounded undead and wounded vampire minions who are not asking for a bed heal; a cultist's are the wounded demons linked to him. The patient stands on the healer's floor within 5 squares and is not fighting. Among those, the healer takes the one with the lowest share of his life. After 10 seconds of game time together, the patient gets the result of a pharmagician's heal: his life at its maximum, and his healable states removed (bleeding, poison, Broken, Frozen, the Dynamo's electrocution, the curses Yrfoul, Oboulos, Dlul and Mankdebol, and the hurt emote). The heal starts over when the patient leaves the 5 squares, when either one starts fighting, or when the patient loses more than 0.25 life points between two checks, which marks a hit. Fighting means a current behaviour of `COMBAT`, `ENEMY_COMBAT` or `USE_SKILL`. The healer keeps doing his own work during those 10 seconds.
 
+## Call to the patient
+
+Necromancers stay at their work and undead wander, so a healer and a patient seldom meet by themselves. Twice a second, each patient whose life is below `HealCompulsionBelow` percent (75 by default) calls a healer: an undead or a vampire the nearest necromancer who is not fighting and has no patient (on the same floor first), a demon his own cultist. The most wounded patients call first. Until his patient is healed, the healer's work scores are set to 0 just before the game chooses behaviours, so he drops his work for `BORED`, unless a need or a fight comes first. In his `BORED` tree (`BT_Bored_1`), a prefix on `Discussion.FindEntityToDiscussWithTask` ends his discussion search as failed, and a prefix on `FindRandomPositionTask` writes his patient's position into the task's position variable instead of a random one, so that the following `MoveTowardsTask` walks him up to 9 units towards his patient at each turn of the tree. Once he is within 5 squares, the heal at close range takes its 10 seconds and ends the call. A call also ends when either one dies or leaves the dungeon, when the healer starts fighting, when the patient no longer needs healing, or after 120 seconds of game time; a patient whose call ran out waits 60 seconds before calling again. With `HealCompulsionBelow = 0` there is no call.
+
 ## Bed heal of vampires
 
 Every 5 seconds, each necromancer who lacks it gets the pharmagician job's three heal components (`ComputeHealScore`, `HealDuration`, `HealProgression`), added by the job's own component configs, so that he has the `HEAL` behaviour with the pharmagician's 10 seconds of work. Three hooks keep him to vampires. A prefix on `AISwitchBehaviourSystem.Run` sets his `HEAL` score to 0 unless a vampire waits in bed with no healer or with him as healer. A prefix on `FindMinionToHealTask.OnExecute`, when the healer looking is a necromancer, marks every other waiting patient as taken for the time of the call, and the postfix gives them back. A postfix on `MinionUtility.IsTherePharmagicianInDungeon` counts a necromancer as a healer only for a vampire, so that a wounded minion does not wait in bed for a necromancer who will not come. The heal deadlock fix (`heal-deadlock.md`) leaves necromancers out of the pharmagicians it watches. Pharmagicians are unchanged and still heal vampires too.
@@ -20,8 +24,8 @@ The three components are kept in the save. With the setting off, the patch remov
 
 ## Log
 
-`[Healing]`: once per necromancer given the heal (the first 20 one by one), each heal at close range for the first 40, then every 5 minutes the number of undead, vampires and demons healed at close range. An error is logged once, and necromancers and cultists then stop healing until the game is restarted.
+`[Healing]`: once per necromancer given the heal (the first 20 one by one), each heal at close range and each call for the first 40, then every 5 minutes the number of undead, vampires and demons healed at close range, of calls made, of calls that ended with the heal and of calls given up after 120 seconds. An error is logged once, and necromancers and cultists then stop healing until the game is restarted.
 
 ## Limits
 
-A heal at close range has no animation, and the healer does not walk to his patient. A character's square is his `GridCoordinatesComponent`; whether it follows a walking character square by square was not checked.
+A heal at close range has no animation. A healer walks to his patient only when the patient's life is below `HealCompulsionBelow`. A character's square is his `GridCoordinatesComponent`; whether it follows a walking character square by square was not checked.

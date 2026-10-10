@@ -19,6 +19,8 @@ namespace NDMUnofficialPatch.Fixes
                 if (Settings.FurnitureToolSwitch.Value) FurnitureToolSwitch.Update();
                 if (Settings.CombatStrength.Value) Balance.CombatStrength.Update();
                 Balance.NecromancerCultistHealing.Update(); // also when off: it then removes the heal components it gave
+                if (Settings.SummonJobs.Value) Balance.SummonJobs.Update();
+                Balance.TrainingForAll.Update(); // also when off: it then removes the training it gave
                 Balance.MinionCap.Update(); // also when off: it then gives a save the game's maximum back
                 Floors.FloorInsertion.Update();
             }

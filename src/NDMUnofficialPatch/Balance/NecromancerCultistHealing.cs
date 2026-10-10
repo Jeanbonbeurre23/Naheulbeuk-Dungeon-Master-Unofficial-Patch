@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using HarmonyLib;
 using Il2CppInterop.Runtime;
 using Leopotam.EcsLite;
@@ -47,6 +48,20 @@ namespace NDMUnofficialPatch.Balance
     // as taken for the time of the call (MinionHealingEntity -2), and the postfix gives -1 back. A postfix on
     // IsTherePharmagicianInDungeon counts a necromancer only for a vampire. The components are kept in the save; with
     // the setting off, the patch removes them from the necromancers at load.
+    //
+    // Call. The heal at close range seldom happens on its own, since necromancers stay at their work and undead
+    // wander. Twice a second, each patient whose life is below
+    // Balance.HealCompulsionBelow percent calls a healer: for an undead or a vampire the nearest necromancer who is not
+    // fighting and has no patient, for a demon his own cultist. Until the patient is healed, the healer's work scores
+    // (invoke, carry corpses, enchant trap, heal, discuss, curse item, magic training, craft resources, sacrifice,
+    // enchant item, mix potion, release anger) are set to 0 in a prefix on AISwitchBehaviourSystem.Run, so the game
+    // gives him BORED (or a need). In his BORED tree (BT_Bored_1), a prefix on Discussion.FindEntityToDiscussWithTask
+    // ends that task as failed, and a prefix on FindRandomPositionTask writes the patient's position
+    // (TransformComponent.Position) into the task's position variable instead of a random one, so the following
+    // MoveTowardsTask walks him up to 9 units towards his patient at each turn of the tree. Once within 5 squares, the
+    // heal at close range takes its 10 seconds. A call ends with the heal, when either one dies or leaves the dungeon,
+    // when the healer fights, or after 120 seconds of game time, after which the patient waits 60 seconds before
+    // calling again.
     internal static unsafe class NecromancerCultistHealing
     {
         private const int Radius = 5;
@@ -73,6 +88,20 @@ namespace NDMUnofficialPatch.Balance
         }
 
         private static readonly Dictionary<int, Care> Cares = new();
+
+        // A healer called to a patient: healer -> call.
+        private sealed class Call
+        {
+            internal int Patient;
+            internal short Gen;
+            internal float Since;
+            internal string Kind;
+        }
+        private static readonly Dictionary<int, Call> Calls = new();
+        private static readonly Dictionary<int, float> CallCooldown = new();
+        private static readonly List<(RawPool Pool, int Offset)> WorkScores = new();
+        private const float CallTimeout = 120f, CallCooldownSeconds = 60f;
+        private static int _callsLogged, _callsMade, _callsDone, _callsTimedOut;
         private static readonly HashSet<int> Tended = new();
         private static readonly List<int> Hidden = new();
         private static readonly List<int> NecroHealers = new();     // necromancers with the heal score component
@@ -135,6 +164,9 @@ namespace NDMUnofficialPatch.Balance
                 _world = GameContext.WorldPointer;
                 Cares.Clear();
                 Tended.Clear();
+                Calls.Clear();
+                CallCooldown.Clear();
+                WorkScores.Clear();
                 NecroHealers.Clear();
                 OtherHealers.Clear();
                 NecroAllowed.Clear();
@@ -175,9 +207,10 @@ namespace NDMUnofficialPatch.Balance
                 }
                 if (now >= _nextSummary)
                 {
-                    if (_healedUndead + _healedVampires + _healedDemons > 0)
-                        Plugin.Logger.LogInfo($"[Healing] in the last 5 minutes, healed at close range: {_healedUndead} undead, {_healedVampires} vampire(s), {_healedDemons} demon(s)");
+                    if (_healedUndead + _healedVampires + _healedDemons + _callsMade > 0)
+                        Plugin.Logger.LogInfo($"[Healing] in the last 5 minutes, healed at close range: {_healedUndead} undead, {_healedVampires} vampire(s), {_healedDemons} demon(s); healers called: {_callsMade}, of whom {_callsDone} healed their patient and {_callsTimedOut} gave up after {CallTimeout:0} s; {Calls.Count} call(s) under way");
                     _healedUndead = _healedVampires = _healedDemons = 0;
+                    _callsMade = _callsDone = _callsTimedOut = 0;
                     _nextSummary = now + 300f;
                 }
             }
@@ -308,20 +341,82 @@ namespace NDMUnofficialPatch.Balance
         // A necromancer's HEAL score, just before the behaviours are chosen.
         internal static void BeforeSwitch()
         {
-            if (_broken || NecroHealers.Count == 0 || _freeVampire || !GameContext.TryWorld(out var world, out _)) return;
+            if (_broken || (NecroHealers.Count == 0 && Calls.Count == 0) || !GameContext.TryWorld(out var world, out _)) return;
             try
             {
-                var score = RawPool.Of<AIComputeHealScoreComponent>(world, -1);
-                foreach (int e in NecroHealers)
+                if (NecroHealers.Count > 0 && !_freeVampire)
                 {
-                    if (NecroAllowed.Contains(e)) continue;
-                    IntPtr s = score.Item(e);
-                    if (s == IntPtr.Zero) continue;
-                    *(float*)(s + _score + _base) = 0f;
-                    *(float*)(s + _score + _final) = 0f;
+                    var score = RawPool.Of<AIComputeHealScoreComponent>(world, -1);
+                    foreach (int e in NecroHealers)
+                    {
+                        if (NecroAllowed.Contains(e)) continue;
+                        IntPtr s = score.Item(e);
+                        if (s == IntPtr.Zero) continue;
+                        *(float*)(s + _score + _base) = 0f;
+                        *(float*)(s + _score + _final) = 0f;
+                    }
                 }
+                if (Calls.Count > 0) StopWork(world);
             }
             catch (Exception e) { Report("setting the necromancers' heal score", e); }
+        }
+
+        // The work scores of every called healer, set to 0 so that the game gives him BORED.
+        private static void StopWork(EcsWorld world)
+        {
+            if (WorkScores.Count == 0)
+            {
+                void Add<T>()
+                {
+                    var pool = RawPool.Of<T>(world, -1);
+                    if (!pool.IsNull) WorkScores.Add((pool, Il2CppRaw.ValueFieldOffset<T>("ScoreData")));
+                }
+                Add<AIComputeInvokeScoreComponent>();
+                Add<AIComputeCarryCorpsesScoreComponent>();
+                Add<AIComputeEnchantTrapScoreComponent>();
+                Add<AIComputeHealScoreComponent>();
+                Add<Discussion.AIComputeDiscussScoreComponent>();
+                Add<AIComputeCurseItemScoreComponent>();
+                Add<AIComputeMagicTrainingScoreComponent>();
+                Add<AIComputeCraftResourcesScoreComponent>();
+                Add<AIComputeSacrificeScoreComponent>();
+                Add<AIComputeEnchantItemScoreComponent>();
+                Add<AIComputeMixPotionScoreComponent>();
+                Add<AIComputeReleaseAngerScoreComponent>();
+            }
+            foreach (int h in Calls.Keys)
+                foreach (var (pool, offset) in WorkScores)
+                {
+                    IntPtr s = pool.Item(h);
+                    if (s == IntPtr.Zero) continue;
+                    *(float*)(s + offset + _base) = 0f;
+                    *(float*)(s + offset + _final) = 0f;
+                }
+        }
+
+        internal static bool IsCalled(IntPtr task)
+        {
+            if (_broken || Calls.Count == 0) return false;
+            try { return Calls.ContainsKey(*(int*)(task + Il2CppRaw.FieldOffset(task, "m_entity"))); }
+            catch { return false; }
+        }
+
+        // A called healer's next walk goes towards his patient.
+        internal static bool WalkToPatient(FindRandomPositionTask task)
+        {
+            if (_broken || Calls.Count == 0) return false;
+            try
+            {
+                int agent = *(int*)(task.Pointer + Il2CppRaw.FieldOffset(task.Pointer, "m_entity"));
+                if (!Calls.TryGetValue(agent, out var call) || !GameContext.TryWorld(out var world, out _)) return false;
+                IntPtr t = RawPool.Of<TransformComponent>(world, -1).Item(call.Patient);
+                if (t == IntPtr.Zero) return false;
+                float* p = (float*)(t + Il2CppRaw.ValueFieldOffset<TransformComponent>("Position"));
+                task.PositionVariable.value = new Vector3(p[0], p[1], p[2]);
+                task.EndAction(true);
+                return true;
+            }
+            catch (Exception e) { Report("walking a healer to his patient", e); return false; }
         }
 
         // For a necromancer looking for a patient, every waiting patient but the vampires is marked as taken.
@@ -464,6 +559,8 @@ namespace NDMUnofficialPatch.Balance
                 list.Add(b);
             }
 
+            UpdateCalls(world, size, healers, lives, undead, vampires, demons);
+
             foreach (var (healer, job) in healers)
             {
                 int h = healer.Entity;
@@ -498,12 +595,89 @@ namespace NDMUnofficialPatch.Balance
                         if (ratio < bestRatio) { bestRatio = ratio; best = p.Entity; }
                     }
                 }
-                if (job == JobType.NECROMANCER) { Consider(undead); Consider(vampires); }
+                if (Calls.TryGetValue(h, out var called) && !Tended.Contains(called.Patient)
+                    && IsListed(called.Patient, job, h, undead, vampires, demons, out var cb) && Near(healer, cb))
+                    best = called.Patient;
+                else if (job == JobType.NECROMANCER) { Consider(undead); Consider(vampires); }
                 else if (demons.TryGetValue(h, out var own)) Consider(own);
                 if (best < 0) continue;
                 Life(lives, best, out float start, out _);
                 Cares[h] = new Care { Patient = best, Gen = world.GetEntityGen(best), Elapsed = 0f, LastLife = start };
                 Tended.Add(best);
+            }
+        }
+
+        private static void UpdateCalls(EcsWorld world, int size, List<(Body Body, JobType Job)> healers, RawPool lives,
+            List<Body> undead, List<Body> vampires, Dictionary<int, List<Body>> demons)
+        {
+            float below = Settings.HealCompulsionBelow.Value / 100f;
+            var free = new Dictionary<int, (Body Body, JobType Job)>();
+            foreach (var h in healers) free[h.Body.Entity] = h;
+
+            // Calls under way: kept while the healer is free to walk and the patient is still wounded.
+            foreach (int h in Calls.Keys.ToList())
+            {
+                var call = Calls[h];
+                bool patientOk = world.IsEntityAlive(call.Patient, size) && world.GetEntityGen(call.Patient) == call.Gen
+                                 && free.TryGetValue(h, out var hb) && IsListed(call.Patient, hb.Job, h, undead, vampires, demons, out _);
+                if (patientOk && _gameTime - call.Since <= CallTimeout) continue;
+                if (patientOk)
+                {
+                    _callsTimedOut++;
+                    CallCooldown[call.Patient] = _gameTime + CallCooldownSeconds;
+                }
+                Calls.Remove(h);
+            }
+            if (below <= 0f) return;
+            foreach (int h in Calls.Keys) free.Remove(h);
+            foreach (int h in Cares.Keys) free.Remove(h);
+            if (free.Count == 0) return;
+            var calledPatients = new HashSet<int>(Calls.Values.Select(c => c.Patient));
+
+            // The patients below the threshold, most wounded first.
+            var patients = new List<(Body Body, float Ratio, string Kind, int Cultist)>();
+            void Collect(List<Body> list, string kind, int cultist)
+            {
+                foreach (var b in list)
+                {
+                    if (calledPatients.Contains(b.Entity) || Tended.Contains(b.Entity)) continue;
+                    if (CallCooldown.TryGetValue(b.Entity, out float until) && _gameTime < until) continue;
+                    if (!Life(lives, b.Entity, out float life, out float max) || life / max >= below) continue;
+                    patients.Add((b, life / max, kind, cultist));
+                }
+            }
+            Collect(undead, "undead", -1);
+            Collect(vampires, "vampire", -1);
+            foreach (var kv in demons) Collect(kv.Value, "demon", kv.Key);
+
+            static int Distance(Body a, Body b) => a.Floor == b.Floor ? Math.Max(Math.Abs(a.X - b.X), Math.Abs(a.Y - b.Y)) : 1000 + 100 * Math.Abs(a.Floor - b.Floor);
+            foreach (var p in patients.OrderBy(x => x.Ratio))
+            {
+                int chosen = -1;
+                if (p.Kind == "demon")
+                {
+                    if (free.ContainsKey(p.Cultist)) chosen = p.Cultist;
+                }
+                else
+                {
+                    int bestDistance = int.MaxValue;
+                    foreach (var kv in free)
+                    {
+                        if (kv.Value.Job != JobType.NECROMANCER) continue;
+                        int d = Distance(kv.Value.Body, p.Body);
+                        if (d < bestDistance) { bestDistance = d; chosen = kv.Key; }
+                    }
+                }
+                if (chosen < 0) continue;
+                Calls[chosen] = new Call { Patient = p.Body.Entity, Gen = world.GetEntityGen(p.Body.Entity), Since = _gameTime, Kind = p.Kind };
+                free.Remove(chosen);
+                _callsMade++;
+                _callsLogged++;
+                if (_callsLogged <= 40)
+                    Plugin.Logger.LogInfo($"[Healing] {Name(chosen, p.Kind == "demon" ? "cultist" : "necromancer")} leaves his work to heal {Name(p.Body.Entity, p.Kind)} ({p.Kind}, life {p.Ratio * 100f:0} %)");
+                else if (_callsLogged == 41)
+                    Plugin.Logger.LogInfo("[Healing] further calls are counted in the 5-minute summary only");
+                if (free.Count == 0) break;
             }
         }
 
@@ -556,6 +730,11 @@ namespace NDMUnofficialPatch.Balance
                 }
             }
 
+            if (Calls.TryGetValue(healer, out var call) && call.Patient == patient)
+            {
+                Calls.Remove(healer);
+                _callsDone++;
+            }
             string kind = job == JobType.CULTIST ? "demon" : isUndead ? "undead" : "vampire";
             if (kind == "demon") _healedDemons++;
             else if (kind == "undead") _healedUndead++;
@@ -573,6 +752,26 @@ namespace NDMUnofficialPatch.Balance
     {
         private static bool Prepare() => Settings.NecromancersAndCultistsHeal.Value;
         private static void Prefix() => NecromancerCultistHealing.BeforeSwitch();
+    }
+
+    // A called healer walks towards his patient instead of a random place, and does not stop to chat.
+    [HarmonyPatch(typeof(FindRandomPositionTask), "OnExecute")]
+    internal static class HealCallWalk
+    {
+        private static bool Prepare() => Settings.NecromancersAndCultistsHeal.Value && Settings.HealCompulsionBelow.Value > 0;
+        private static bool Prefix(FindRandomPositionTask __instance) => !NecromancerCultistHealing.WalkToPatient(__instance);
+    }
+
+    [HarmonyPatch(typeof(Discussion.FindEntityToDiscussWithTask), "OnExecute")]
+    internal static class HealCallNoChat
+    {
+        private static bool Prepare() => Settings.NecromancersAndCultistsHeal.Value && Settings.HealCompulsionBelow.Value > 0;
+        private static bool Prefix(Discussion.FindEntityToDiscussWithTask __instance)
+        {
+            if (!NecromancerCultistHealing.IsCalled(__instance.Pointer)) return true;
+            __instance.EndAction(false);
+            return false;
+        }
     }
 
     [HarmonyPatch(typeof(FindMinionToHealTask), "OnExecute")]
